@@ -12,7 +12,8 @@ const blogSchema = mongoose.Schema({
 
 const Blog = mongoose.model('Blog', blogSchema)
 
-const mongoUrl = 'mongodb://localhost/bloglist'
+//osoite tässä
+
 mongoose.connect(mongoUrl, { family: 4 })
 
 app.use(express.json())
