@@ -1,5 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const config = require('./utils/config')
+const logger = require('./utils/logger')
 
 const app = express()
 
@@ -12,7 +14,7 @@ const blogSchema = mongoose.Schema({
 
 const Blog = mongoose.model('Blog', blogSchema)
 
-//osoite tässä
+const mongoUrl = 'mongodb+srv://jonttuuh_db_user:8VMhBKz23FcAtsfB@cluster0.xuiqvvv.mongodb.net/blogApp?retryWrites=true&w=majority&appName=Cluster0'
 
 mongoose.connect(mongoUrl, { family: 4 })
 
@@ -34,5 +36,6 @@ app.post('/api/blogs', (request, response) => {
 
 const PORT = 3003
 app.listen(PORT, () => {
+    logger.info(`Server running on port ${config.PORT}`)
     console.log(`Server running on port ${PORT}`)
 })
