@@ -63,6 +63,27 @@ test('blog id is named id', async () => {
     assert.strictEqual(blog._id, undefined)
 })
 
+test('succeeds with valid data', async () => {
+    const newBlog = {
+        title: 'test title',
+        author: 'test author',
+        url: 'https://test.fi',
+        likes: 8
+    }
+
+    await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+    const response = await api.get('/api/blogs')
+
+    assert.strictEqual(response.body.length, testBlogs.length + 1)
+
+    const titles = response.body.map(blog => blog.title)
+    assert(titles.includes('test title'))
+})
 
 after(async () => {
     await mongoose.connection.close()
