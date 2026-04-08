@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+console.log(process.env.SECRET)
 const PORT = process.env.PORT
 
 const MONGODB_URI = process.env.NODE_ENV === 'test'
