@@ -40,9 +40,14 @@ const testBlogs = [
 
 beforeEach(async () => {
     await Blog.deleteMany({})
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('testisana', 10)
+    const user = new User({ username: 'testi', passwordHash })
+    await user.save()
 
     for (let blog of testBlogs) {
-        await new Blog(blog).save()
+        await new Blog({ ...blog, user: user._id }).save()
     }
 })
 
@@ -67,6 +72,20 @@ test('blog id is named id', async () => {
 })
 
 describe('addition of a new blog', () => {
+    let token
+    beforeEach(async () => {
+        await User.deleteMany({})
+
+        const passwordHash = await bcrypt.hash('sekret', 10)
+        const user = new User({username: 'root', passwordHash})
+        await user.save()
+
+        const response = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+
+        token = response.body.token
+    })
     test('succeeds with valid data', async () => {
         const newBlog = {
             title: 'test title',
@@ -77,6 +96,7 @@ describe('addition of a new blog', () => {
 
         await api
             .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
             .send(newBlog)
             .expect(201)
             .expect('Content-Type', /application\/json/)
@@ -88,54 +108,57 @@ describe('addition of a new blog', () => {
         const titles = response.body.map(blog => blog.title)
         assert(titles.includes('test title'))
     })
-})
 
-test('if missing likes, set to 0', async () => {
-    const newBlog = {
-        title: 'Blog with no likes',
-        author: 'test author',
-        url: 'https://test.fi'
-    }
+    test('if missing likes, set to 0', async () => {
+        const newBlog = {
+            title: 'Blog with no likes',
+            author: 'test author',
+            url: 'https://test.fi'
+        }
 
-    const response = await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
+        const response = await api
+            .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newBlog)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
 
-    assert.strictEqual(response.body.likes, 0)
-})
+        assert.strictEqual(response.body.likes, 0)
+    })
 
-test('title is not added', async () => {
-    const newBlog = {
-        author: 'test author1',
-        url: 'https://test.fi',
-        likes: 6
-    }
+    test('title is not added', async () => {
+        const newBlog = {
+            author: 'test author1',
+            url: 'https://test.fi',
+            likes: 6
+        }
 
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(400)
+        await api
+            .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newBlog)
+            .expect(400)
 
-    const response = await api.get('/api/blogs')
-    assert.strictEqual(response.body.length, testBlogs.length)
-})
+        const response = await api.get('/api/blogs')
+        assert.strictEqual(response.body.length, testBlogs.length)
+    })
 
-test('url is not added', async () => {
-    const newBlog = {
-        title: 'No URL added',
-        author: 'test author2',
-        likes: 5
-    }
+    test('url is not added', async () => {
+        const newBlog = {
+            title: 'No URL added',
+            author: 'test author2',
+            likes: 5
+        }
 
-    await api
-        .post('/api/blogs')
-        .send(newBlog)
-        .expect(400)
+        await api
+            .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newBlog)
+            .expect(400)
 
-    const response = await api.get('/api/blogs')
-    assert.strictEqual(response.body.length, testBlogs.length)
+        const response = await api.get('/api/blogs')
+        assert.strictEqual(response.body.length, testBlogs.length)
+    })
 })
 
 describe('deletion of a blog', () => {
