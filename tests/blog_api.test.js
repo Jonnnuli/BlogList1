@@ -234,6 +234,100 @@ describe('when there is initially one user at db', () => {
     })
 })
 
+describe('user creation', () => {
+    beforeEach(async () => {
+        await User.deleteMany({})
+    })
+    test('missing username rejected', async () => {
+        const newUser = {
+            name: 'User Missing',
+            password: 'usermissing'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+
+        assert(result.body.error.includes('username'))
+    })
+    test('missing password rejected', async () => {
+        const newUser = {
+            username: 'passwordmissing',
+            name: 'Password Missing'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+
+        assert(result.body.error.includes('password'))
+    })
+    test('user is created successfully', async () => {
+        const newUser = {
+            username: 'Mikkonen',
+            name: 'Testi Mikko',
+            password: 'mikko123'
+        }
+
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(201)
+
+        const users = await User.find({})
+        assert.strictEqual(users.length, 1)
+    })
+
+    test('too short password rejected', async () => {
+        const newUser = {
+            username: 'mallimikko',
+            name: 'Malli Mikko',
+            password: 'm1'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+
+        assert(result.body.error.includes('password'))
+    })
+
+    test('too short user rejected', async () => {
+        const newUser = {
+            username: 'mm',
+            name: 'Mini Mikko',
+            password: 'mikko1'
+        }
+
+        const result = await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(400)
+
+        assert(result.body.error.includes('username'))
+    })
+
+    test('duplicate username rejected', async () => {
+        const user = {
+            username: 'samaMikko',
+            name: 'Mikko',
+            password: 'samamikko1'
+        }
+
+        await api.post('/api/users').send(user)
+
+        const result = await api
+            .post('/api/users')
+            .send(user)
+            .expect(400)
+
+        assert(result.body.error.includes('unique'))
+    })
+})
+
 after(async () => {
     await mongoose.connection.close()
 })
